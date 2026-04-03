@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://lexhub-backend.onrender.com';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://lexhub-backend.onrender.com';
 
 async function request(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');

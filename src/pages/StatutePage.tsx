@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, BookOpen, Bookmark, ExternalLink, Calendar, Tag, Star, Download, FileText, Layers, Eye, Plus, X, FileUp, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
-import { api } from '../utils/api';
+import { api, BASE_URL } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -142,7 +142,7 @@ const StatutePage: React.FC = () => {
     try {
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'loading' }));
       
-      const fullUrl = `https://lexhub-backend.onrender.com${doc.file_url}`;
+      const fullUrl = `${BASE_URL}${doc.file_url}`;
       window.open(fullUrl, '_blank');
       
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'success' }));
@@ -158,7 +158,7 @@ const StatutePage: React.FC = () => {
   };
 
   const handleDocumentPreview = (doc: StatuteDocument) => {
-    const fullUrl = `https://lexhub-backend.onrender.com${doc.file_url}`;
+    const fullUrl = `${BASE_URL}${doc.file_url}`;
     window.open(fullUrl, '_blank');
   };
 
@@ -626,7 +626,7 @@ const StatutePage: React.FC = () => {
                   return;
                 }
 
-                const response = await fetch('https://lexhub-backend.onrender.com/statutes/upload', {
+                const response = await fetch(`${BASE_URL}/statutes/upload`, {
                   method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`

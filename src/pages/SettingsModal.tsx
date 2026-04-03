@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-toastify';
+import { BASE_URL } from '../utils/api';
 import 'react-toastify/dist/ReactToastify.css';
 
 const TABS = [
@@ -73,7 +74,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       try {
         setSaving(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('https://lexhub-backend.onrender.com/users/profile-picture', {
+        const response = await fetch(`${BASE_URL}/users/profile-picture`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -84,7 +85,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         if (!response.ok) throw new Error('Upload failed');
         
         const data = await response.json();
-        const newPhotoUrl = `https://lexhub-backend.onrender.com${data.profile_picture}`;
+        const newPhotoUrl = `${BASE_URL}${data.profile_picture}`;
         
         if (updateUser) {
            // We only need to update the local state here since the DB is already updated by the POST
@@ -281,7 +282,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                    submitBtn.disabled = true;
                    submitBtn.innerText = "Uploading...";
                    const token = localStorage.getItem('token');
-                   const res = await fetch('https://lexhub-backend.onrender.com/lawyers/publications', {
+                   const res = await fetch(`${BASE_URL}/lawyers/publications`, {
                      method: 'POST',
                      headers: { 'Authorization': `Bearer ${token}` },
                      body: formData

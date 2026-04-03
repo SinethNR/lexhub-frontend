@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Scale, Menu, X, Globe, Settings, BarChart, User, Bell } from 'lucide-react';
+import { Scale, Menu, X, Globe, BarChart, User, Bell } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
-import SettingsModal from '../pages/SettingsModal';
 import { useNavigate } from 'react-router-dom';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);  const location = useLocation();
+  const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
   const { logout, user, role } = useUser();
   const navigate = useNavigate();
@@ -258,13 +257,6 @@ const Header: React.FC = () => {
                     <User className="h-4 w-4" />
                     <span>My Profile</span>
                   </button>
-                  <button
-                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => { setShowSettings(true); setIsProfileOpen(false); }}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                  </button>
                   <button 
                     className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => { navigate('/reports'); setIsProfileOpen(false); }}
@@ -312,9 +304,6 @@ const Header: React.FC = () => {
           </div>
         )}
       </div>
-      {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
-      )}
     </header>
   );
 };
