@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { BASE_URL } from '../utils/api';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -28,6 +28,11 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [successRate, setSuccessRate] = useState(user?.lawyer_details?.success_rate || '');
   const [education, setEducation] = useState(user?.lawyer_details?.education || '');
   const [hourlyRate, setHourlyRate] = useState(user?.lawyer_details?.hourly_rate || 20000);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [showPhotoActions, setShowPhotoActions] = useState(false);
@@ -119,6 +124,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, [autoTheme]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 dark:bg-opacity-80">
+      <ToastContainer position="top-right" style={{ zIndex: 9999 }} />
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl p-8 relative">
         <button
           className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 text-2xl transition-colors"
@@ -372,15 +378,58 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 <span className="material-icons text-blue-600 dark:text-blue-400">lock</span> Security Settings
               </h4>
               <form
-                onSubmit={e => {
+                onSubmit={async e => {
                   e.preventDefault();
-                  // Optionally show a toast or feedback
+                  if (!currentPassword || !newPassword || !confirmPassword) {
+                    toast.error("Please fill in all password fields");
+                    return;
+                  }
+                  if (newPassword !== confirmPassword) {
+                    toast.error("New passwords do not match");
+                    return;
+                  }
+                  if (newPassword.length < 6) {
+                    toast.error("New password must be at least 6 characters");
+                    return;
+                  }
+
+                  try {
+                    setPasswordChangeLoading(true);
+                    const token = localStorage.getItem('token');
+                    const res = await fetch(`${BASE_URL}/users/change-password`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                      })
+                    });
+
+                    if (!res.ok) {
+                      const data = await res.json();
+                      throw new Error(data.detail || "Failed to change password");
+                    }
+
+                    toast.success("Password changed successfully!");
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  } catch (error: any) {
+                    toast.error(error.message);
+                  } finally {
+                    setPasswordChangeLoading(false);
+                  }
                 }}
               >
                 <div className="mb-4">
                   <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">Current Password</label>
                   <input
                     type="password"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     placeholder="Enter your current password"
                   />
@@ -389,6 +438,8 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">New Password</label>
                   <input
                     type="password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     placeholder="Enter your new password"
                   />
@@ -397,15 +448,18 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">Confirm New Password</label>
                   <input
                     type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     placeholder="Confirm your new password"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 dark:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md hover:bg-blue-700 dark:hover:bg-blue-800 transition"
+                  disabled={passwordChangeLoading}
+                  className="w-full bg-blue-600 dark:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md hover:bg-blue-700 dark:hover:bg-blue-800 transition disabled:opacity-50"
                 >
-                  Change Password
+                  {passwordChangeLoading ? 'Changing...' : 'Change Password'}
                 </button>
               </form>
             </div>

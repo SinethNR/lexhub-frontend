@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Search, Heart } from 'lucide-react';
+import { Briefcase, Search, Heart, Image as ImageIcon, X } from 'lucide-react';
 import { api } from '../utils/api';
 import { useUser } from '../contexts/UserContext';
 import { toast, ToastContainer } from 'react-toastify';
@@ -47,6 +47,18 @@ const BlogsPage: React.FC = () => {
     excerpt: '',
     content: '',
   });
+  const [coverImageBase64, setCoverImageBase64] = useState<string | null>(null);
+
+  const extractCoverImage = (contentText: string) => {
+    const match = contentText.match(/\[COVER_IMAGE\](.*?)\[\/COVER_IMAGE\]/);
+    if (match) {
+      return {
+        image: match[1],
+        cleanContent: contentText.replace(match[0], '').trim()
+      };
+    }
+    return { image: null, cleanContent: contentText };
+  };
 
   const fetchBlogs = async () => {
     setIsLoading(true);
@@ -80,16 +92,23 @@ const BlogsPage: React.FC = () => {
         return;
       }
       
+      let finalContent = newBlog.content;
+      if (coverImageBase64) {
+        // We compress the image and store it within the markdown/text to bypass the lack of backend CDN
+        finalContent = `[COVER_IMAGE]${coverImageBase64}[/COVER_IMAGE]\n\n${finalContent}`;
+      }
+      
       await api.post('/blogs/', {
         title: newBlog.title,
         tags: newBlog.tag,
         excerpt: newBlog.excerpt,
-        content: newBlog.content
+        content: finalContent
       });
       
       toast.success("Blog published successfully!");
       setShowNewBlogForm(false);
       setNewBlog({ title: '', tag: allTags[0] || '', excerpt: '', content: '' });
+      setCoverImageBase64(null);
       fetchBlogs(); // reload blogs
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to publish blog.");
@@ -142,6 +161,18 @@ const BlogsPage: React.FC = () => {
     });
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Compress image slightly if large, or just read as base64 for simplicity
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImageBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="w-full py-10 px-6 min-h-screen bg-gray-50">
       <ToastContainer />
@@ -169,12 +200,32 @@ const BlogsPage: React.FC = () => {
         <form onSubmit={handleNewBlogPost} className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8 relative">
           <h3 className="text-xl font-bold text-gray-900 mb-6">Create New Blog</h3>
           <div className="mb-4">
+            {coverImageBase64 ? (
+              <div className="relative mb-4 rounded-xl overflow-hidden shadow-sm border border-gray-200 group">
+                <img src={coverImageBase64} alt="Cover Preview" className="w-full h-48 object-cover" />
+                <button 
+                  type="button" 
+                  onClick={() => setCoverImageBase64(null)}
+                  className="absolute top-3 right-3 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 mb-4 transition-colors">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500 font-semibold"><span className="text-blue-600">Click to upload</span> an eye-catching cover photo</p>
+                </div>
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+              </label>
+            )}
             <input
               type="text"
               name="title"
               value={newBlog.title}
               onChange={handleNewBlogChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 font-bold text-lg"
               placeholder="Blog title..."
               required
             />
@@ -195,29 +246,29 @@ const BlogsPage: React.FC = () => {
               value={newBlog.excerpt}
               onChange={handleNewBlogChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
-              placeholder="Short excerpt or description..."
+              placeholder="Short excerpt or description highlighting the key point..."
               required
             />
             <textarea
               name="content"
               value={newBlog.content}
               onChange={handleNewBlogChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-2 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400"
-              placeholder="Write your blog content..."
-              rows={8}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-2 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 font-serif leading-relaxed"
+              placeholder="Write your blog content here..."
+              rows={10}
               required
             />
           </div>
           <div className="flex gap-4">
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-900 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors"
+              className="px-8 py-2.5 bg-blue-900 text-white rounded-lg font-bold hover:bg-emerald-600 transition-colors shadow-md"
             >
-              Post
+              Publish Post
             </button>
             <button
               type="button"
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               onClick={() => setShowNewBlogForm(false)}
             >
               Cancel
@@ -258,105 +309,157 @@ const BlogsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-6">
-        {isLoading ? (
-          <div className="text-center text-gray-500 py-10 flex justify-center items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-            <span className="ml-3">Loading blogs...</span>
-          </div>
-        ) : filteredBlogs.length === 0 ? (
-          <div className="text-center text-gray-500 py-10 bg-white rounded-xl shadow-sm border border-gray-100">
-             No blogs found for your search or filter.
-          </div>
-        ) : (
-          filteredBlogs.map(blog => {
-            const isExpanded = expandedBlog === blog.id;
+      {expandedBlog !== null ? (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 md:p-12 relative animate-fade-in max-w-4xl mx-auto">
+          {(() => {
+            const blog = blogs.find(b => b.id === expandedBlog);
+            if (!blog) return null;
+            const { image, cleanContent } = extractCoverImage(blog.content);
             const blogTags = blog.tags ? blog.tags.split(',').map(t => t.trim()) : [];
             
             return (
-              <div
-                key={blog.id}
-                className={`w-full ${isExpanded ? 'bg-white border-2 border-emerald-400 rounded-xl shadow-2xl p-6 md:p-10 z-10' : 'bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 md:p-6 relative'} transition-all duration-300`}
-              >
-                {/* Like Button Positioned Top Right */}
-                <button 
-                  onClick={(e) => handleLike(e, blog.id)}
-                  className={`absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all ${blog.has_liked ? 'border-red-200 bg-red-50 text-red-500' : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'}`}
+              <>
+                <button
+                  className="absolute top-6 left-6 text-gray-500 hover:text-blue-900 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+                  onClick={() => setExpandedBlog(null)}
                 >
-                  <Heart className={`w-4 h-4 ${blog.has_liked ? 'fill-current' : ''}`} />
-                  <span className="font-semibold text-sm">{blog.likes_count}</span>
+                  ← Back to Articles
                 </button>
 
-                {isExpanded ? (
-                  <>
-                    <div className="flex flex-col md:flex-row md:items-center gap-6 mb-6 mt-4">
-                      <div className="flex-1 min-w-0 pr-16">
-                        <h3 className="text-2xl font-bold text-blue-900 mb-2 leading-tight">{blog.title}</h3>
-                        <div className="flex items-center text-sm text-gray-500 flex-wrap gap-2">
-                          <span>{formatDate(blog.created_at)}</span>
-                          <span className="mx-1">•</span>
-                          {blogTags.map(tag => (
-                            <span key={tag} className="bg-emerald-50 text-emerald-700 rounded-full px-3 py-0.5 text-xs font-medium border border-emerald-100">{tag}</span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center justify-center min-w-[120px] w-[120px] ml-auto">
-                        <img
-                          src={blog.author_photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(blog.author_name)}
-                          alt={blog.author_name}
-                          className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-4 border-gray-50 shadow-sm mb-2"
-                        />
-                        <span className="text-sm font-semibold text-gray-800 text-center">{blog.author_name}</span>
-                        <span className="text-xs text-blue-600 font-medium">Author</span>
-                      </div>
+                <div className="mt-12 mb-8 text-center max-w-3xl mx-auto">
+                  {blogTags.length > 0 && (
+                    <div className="flex justify-center flex-wrap gap-2 mb-4">
+                      {blogTags.map(tag => (
+                        <span key={tag} className="text-emerald-600 uppercase tracking-widest text-xs font-bold">{tag}</span>
+                      ))}
                     </div>
-                    
-                    {blog.excerpt && (
-                      <div className="text-gray-600 text-lg italic border-l-4 border-emerald-400 pl-4 mb-6">
-                        {blog.excerpt}
-                      </div>
-                    )}
-                    
-                    <div className="prose max-w-none text-gray-800 whitespace-pre-wrap leading-relaxed mb-6 font-serif">
-                      {blog.content}
-                    </div>
-                    
-                    <div className="flex justify-between items-center border-t border-gray-100 pt-4">
-                      <button
-                        className="text-gray-500 hover:text-blue-900 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                        onClick={() => setExpandedBlog(null)}
-                      >
-                        Collapse Article
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col md:flex-row gap-5 pr-20 cursor-pointer" onClick={() => setExpandedBlog(blog.id)}>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="text-xl font-bold text-gray-900 hover:text-blue-700 transition-colors mb-2 leading-tight pr-4">{blog.title}</h3>
-                      <div className="flex items-center text-xs text-gray-500 mb-3 flex-wrap gap-2">
-                        <span className="font-medium text-gray-700">By {blog.author_name}</span>
-                        <span className="mx-1">•</span>
-                        <span>{formatDate(blog.created_at)}</span>
-                        {blogTags.length > 0 && <span className="mx-1">•</span>}
-                        {blogTags.slice(0, 2).map(tag => (
-                          <span key={tag} className="bg-emerald-50 text-emerald-700 rounded-md px-2 py-0.5 font-medium border border-emerald-100">{tag}</span>
-                        ))}
-                      </div>
-                      <p className="text-gray-600 line-clamp-2 text-sm leading-relaxed">
-                        {blog.excerpt || blog.content.substring(0, 150) + "..."}
-                      </p>
-                      <button className="text-emerald-600 hover:text-emerald-700 text-sm font-bold mt-3 text-left w-fit">
-                        Read Full Article →
-                      </button>
-                    </div>
+                  )}
+                  <h1 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight mb-6 font-serif">{blog.title}</h1>
+                  {blog.excerpt && (
+                    <p className="text-xl text-gray-500 font-serif italic">{blog.excerpt}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center gap-4 mb-10 pb-10 border-b border-gray-100">
+                  <img
+                    src={blog.author_photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(blog.author_name)}
+                    alt={blog.author_name}
+                    className="w-14 h-14 rounded-full object-cover shadow-sm"
+                  />
+                  <div className="text-left">
+                    <span className="block font-bold text-gray-900">{blog.author_name}</span>
+                    <span className="block text-sm text-gray-500">{formatDate(blog.created_at)} • {Math.max(1, Math.ceil(cleanContent.length / 1000))} min read</span>
+                  </div>
+                </div>
+
+                {image && (
+                  <div className="mb-12 rounded-2xl overflow-hidden shadow-lg border border-gray-100 max-h-[500px]">
+                    <img src={image} alt={blog.title} className="w-full h-full object-cover" />
                   </div>
                 )}
-              </div>
+                
+                <div className="prose max-w-3xl mx-auto text-gray-800 whitespace-pre-wrap leading-relaxed font-serif text-lg md:text-xl">
+                  {cleanContent}
+                </div>
+
+                <div className="mt-16 pt-8 border-t border-gray-100 flex justify-center">
+                  <button 
+                    onClick={(e) => handleLike(e, blog.id)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-full border-2 transition-all ${blog.has_liked ? 'border-red-200 bg-red-50 text-red-500' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+                  >
+                    <Heart className={`w-6 h-6 ${blog.has_liked ? 'fill-current text-red-500' : ''}`} />
+                    <span className="font-bold">{blog.likes_count} {blog.likes_count === 1 ? 'Like' : 'Likes'}</span>
+                  </button>
+                </div>
+              </>
             );
-          })
-        )}
-      </div>
+          })()}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {isLoading ? (
+            <div className="col-span-full text-center text-gray-500 py-10 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              <span className="ml-3">Loading blogs...</span>
+            </div>
+          ) : filteredBlogs.length === 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-10 bg-white rounded-xl shadow-sm border border-gray-100">
+               No blogs found for your search or filter.
+            </div>
+          ) : (
+            filteredBlogs.map(blog => {
+              const blogTags = blog.tags ? blog.tags.split(',').map(t => t.trim()) : [];
+              const { image } = extractCoverImage(blog.content);
+              
+              // Fallback gradients based on ID for consistent aesthetics when no image exists
+              const fallbackGradients = [
+                'from-blue-100 to-indigo-100',
+                'from-emerald-100 to-teal-100',
+                'from-amber-100 to-orange-100',
+                'from-rose-100 to-pink-100',
+                'from-purple-100 to-fuchsia-100'
+              ];
+              const gradient = fallbackGradients[blog.id % fallbackGradients.length];
+              
+              return (
+                <div
+                  key={blog.id}
+                  className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group border border-gray-100 cursor-pointer"
+                  onClick={() => setExpandedBlog(blog.id)}
+                >
+                  {/* Card Image Wrapper */}
+                  <div className={`relative h-56 w-full overflow-hidden ${!image ? `bg-gradient-to-br ${gradient}` : 'bg-gray-100'}`}>
+                    {image ? (
+                      <img src={image} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                         <Briefcase className="w-20 h-20 text-gray-500 mix-blend-multiply" />
+                      </div>
+                    )}
+                    <button 
+                      onClick={(e) => handleLike(e, blog.id)}
+                      className={`absolute top-3 right-3 flex items-center justify-center p-2 rounded-full backdrop-blur-md transition-all shadow-sm ${blog.has_liked ? 'bg-white/90 text-red-500' : 'bg-black/30 text-white hover:bg-black/50'}`}
+                    >
+                      <Heart className={`w-4 h-4 ${blog.has_liked ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Card Content Wrapper */}
+                  <div className="p-6 flex flex-col flex-grow">
+                    {blogTags.length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{blogTags[0]}</span>
+                      </div>
+                    )}
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors mb-2 leading-tight font-serif line-clamp-2">
+                      {blog.title}
+                    </h3>
+                    <p className="text-gray-500 line-clamp-3 text-sm leading-relaxed mb-6 font-serif">
+                      {blog.excerpt || extractCoverImage(blog.content).cleanContent.substring(0, 150) + "..."}
+                    </p>
+                    
+                    {/* Author Row pushed to bottom */}
+                    <div className="mt-auto pt-4 flex items-center gap-3">
+                      <img
+                        src={blog.author_photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(blog.author_name)}
+                        alt={blog.author_name}
+                        className="w-8 h-8 rounded-full object-cover border border-gray-100 shadow-sm"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-gray-900">{blog.author_name}</span>
+                        <span className="text-[10px] text-gray-500">{formatDate(blog.created_at)}</span>
+                      </div>
+                      <div className="ml-auto flex items-center text-gray-400 text-xs gap-1">
+                         <span className="font-semibold">{blog.likes_count}</span> <Heart className="w-3 h-3 fill-current opacity-50" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
     </div>
   );
 };

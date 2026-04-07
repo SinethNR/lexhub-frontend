@@ -43,16 +43,19 @@ const AdminDashboard: React.FC = () => {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
+      
       const [statsData, usersData, lawyersData, adminsData] = await Promise.all([
-        api.get('/admin/stats').catch(() => ({ total_users: 0, total_lawyers: 0, total_consultations: 0 })),
-        api.get('/admin/users').catch(() => []),
-        api.get('/admin/lawyers').catch(() => []),
-        api.get('/admin/admins').catch(() => [])
+        api.get('/admin/stats'),
+        api.get('/admin/users'),
+        api.get('/admin/lawyers'),
+        api.get('/admin/admins')
       ]);
+      
       setStats({ ...statsData, total_admins: adminsData.length });
       setUsers(usersData);
       setLawyers(lawyersData);
       setAdmins(adminsData);
+
     } catch (error) {
       toast.error('Failed to load admin data');
     } finally {
@@ -76,6 +79,9 @@ const AdminDashboard: React.FC = () => {
     e.preventDefault();
     try {
       setIsSubmitting(true);
+      
+
+
       await api.post('/admin/users', newUser);
       toast.success(`${newUser.user_type} created successfully`);
       setShowAddModal(false);
@@ -136,11 +142,14 @@ const AdminDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-4 md:p-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="text-gray-600">Overview and management of the LexHub platform</p>
           </div>
+          
+
+
           <button 
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"

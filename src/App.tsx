@@ -27,7 +27,7 @@ import ReportsPage from './pages/ReportsPage';
 function AppContent() {
   const location = useLocation();
   const { currentTheme } = useTheme();  // Remove header for overview pages and auth page
-  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth', '/admin-dashboard'];
+  const noHeaderRoutes = ['/', '/ai-assistant', '/statute-overview', '/consultation-overview', '/auth'];
   const hideHeader = noHeaderRoutes.includes(location.pathname);
   
   // Update document metadata based on theme

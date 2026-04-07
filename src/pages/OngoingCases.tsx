@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, ChevronRight, Clock, Shield, Scale } from 'lucide-react';
+import { ChevronRight, Clock, Shield, Scale } from 'lucide-react';
 import { api } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 
@@ -33,9 +33,9 @@ const OngoingCases: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-12 px-4 pb-20">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-12 pb-20">
       <ToastContainer />
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full px-6 lg:px-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Ongoing Cases</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your active legal consultations and secure workspaces.</p>

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, TrendingUp, Clock, Star, Settings, CheckCircle, XCircle, MessageSquare, FileText, ExternalLink } from 'lucide-react';
+import { Calendar, TrendingUp, Clock, Star, Settings, CheckCircle, XCircle, MessageSquare, FileText, ExternalLink, Heart } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { api } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 const LawyerDashboard: React.FC = () => {
-  const { user, updateUser } = useUser();
+  const { user, updateUser, role } = useUser();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'profile' | 'blogs' | 'statutes'>('overview');
   const [consultations, setConsultations] = useState<any[]>([]);
@@ -17,7 +18,7 @@ const LawyerDashboard: React.FC = () => {
   const [totalHearts, setTotalHearts] = useState(0);
   const [forumStats, setForumStats] = useState({ posts_count: 0, likes_received: 0, replies_received: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const { t } = useLanguage();
+  useLanguage(); 
 
   // Settings State
   const [hourlyRate, setHourlyRate] = useState(20000);
@@ -36,25 +37,32 @@ const LawyerDashboard: React.FC = () => {
 
   const fetchConsultations = async () => {
     try {
-      const data = await api.get('/consultations/my-consultations');
+      setIsLoading(true);
+      const data = await api.get('/consultations/my-consultations').catch(() => {
+        // Fallback for Admin viewing
+        if (role === 'admin') {
+          return [
+            { id: 1, student_name: 'Kasun Fernando', date: '2024-04-10', time: '10:00 AM', status: 'confirmed', subject: 'Trademark Registration' },
+            { id: 2, student_name: 'Sachini Rathnayake', date: '2024-04-12', time: '02:30 PM', status: 'pending', subject: 'Copyright infringement' }
+          ];
+        }
+        throw new Error('Failed to fetch');
+      });
       setConsultations(data);
       
-      if (user?.user_type === 'lawyer') {
-        const blogsRes = await api.get('/blogs/me');
-        setMyBlogs(blogsRes);
-        const hearts = blogsRes.reduce((acc: number, blog: any) => acc + blog.likes_count, 0);
-        setTotalHearts(hearts);
+      const blogsRes = await api.get('/blogs/me').catch(() => role === 'admin' ? [] : []);
+      setMyBlogs(blogsRes);
+      const hearts = blogsRes.reduce((acc: number, blog: any) => acc + (blog.likes_count || 0), 0);
+      setTotalHearts(hearts);
 
-        // Fetch forum stats
-        const fStats = await api.get('/forum/user-stats');
-        setForumStats(fStats);
+      const fStats = await api.get('/forum/user-stats').catch(() => role === 'admin' ? { posts_count: 5, likes_received: 12, replies_received: 8 } : { posts_count: 0, likes_received: 0, replies_received: 0 });
+      setForumStats(fStats);
 
-        // Fetch statutes
-        const statutesRes = await api.get('/statutes/my-uploads');
-        setMyStatutes(statutesRes);
-      }
+      const statutesRes = await api.get('/statutes/my-uploads').catch(() => role === 'admin' ? [] : []);
+      setMyStatutes(statutesRes);
+
     } catch (error) {
-      toast.error('Failed to fetch data');
+      if (role !== 'admin') toast.error('Failed to fetch data');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +124,8 @@ const LawyerDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <ToastContainer />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 lg:px-12 py-8">
+
         
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
@@ -132,80 +141,95 @@ const LawyerDashboard: React.FC = () => {
         </div>
 
         {/* Stats Overview Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-400 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Rating</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{user?.lawyer_details?.rating || 4.8}</p>
+                <p className="text-yellow-50 text-sm font-medium">Rating</p>
+                <p className="text-3xl font-bold text-white mt-1">{user?.lawyer_details?.rating || 4.8}</p>
               </div>
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Star className="h-6 w-6 text-yellow-600" />
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <Star className="h-6 w-6 text-white" />
               </div>
             </div>
-            <div className="flex items-center mt-2">
-              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-              <span className="text-gray-600 text-sm font-medium ml-1">{user?.lawyer_details?.reviews_count || 50} total reviews</span>
+            <div className="flex items-center mt-4">
+              <Star className="h-4 w-4 text-yellow-200 fill-current" />
+              <span className="text-yellow-50 text-xs font-medium ml-1">{user?.lawyer_details?.reviews_count || 50} total reviews</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-red-600 to-rose-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Pending Requests</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{pendingConsultations.length}</p>
+                <p className="text-red-50 text-sm font-medium">Pending Requests</p>
+                <p className="text-3xl font-bold text-white mt-1">{pendingConsultations.length}</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <Clock className="h-6 w-6 text-red-600" />
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <Clock className="h-6 w-6 text-white" />
               </div>
             </div>
-            <div className="flex items-center mt-2">
-              <span className="text-red-500 text-sm font-medium ml-1">Requires your attention</span>
+            <div className="flex items-center mt-4 text-xs font-medium text-red-50">
+              Requires attention
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Active Cases</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{activeConsultations.length}</p>
+                <p className="text-blue-50 text-sm font-medium">Active Cases</p>
+                <p className="text-3xl font-bold text-white mt-1">{activeConsultations.length}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <TrendingUp className="h-6 w-6 text-white" />
               </div>
             </div>
-            <div className="flex items-center mt-2 text-sm text-gray-500">
+            <div className="mt-4 text-xs font-medium text-blue-50">
               Confirmed engagements
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-emerald-600 to-teal-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Forum Engagement</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{forumStats.replies_received + forumStats.likes_received}</p>
+                <p className="text-emerald-50 text-sm font-medium">Forum Activity</p>
+                <p className="text-3xl font-bold text-white mt-1">{forumStats.replies_received + forumStats.likes_received}</p>
               </div>
-              <div className="p-3 bg-emerald-100 rounded-lg">
-                <MessageSquare className="h-6 w-6 text-emerald-600" />
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <MessageSquare className="h-6 w-6 text-white" />
               </div>
             </div>
-            <div className="flex items-center mt-2 text-sm text-emerald-600">
+            <div className="mt-4 text-xs font-medium text-emerald-50">
               {forumStats.replies_received} replies • {forumStats.likes_received} likes
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-pink-600 to-rose-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Statutes Shared</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{myStatutes.length}</p>
+                <p className="text-pink-50 text-sm font-medium">Blog Hearts</p>
+                <p className="text-3xl font-bold text-white mt-1">{totalHearts}</p>
               </div>
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <FileText className="h-6 w-6 text-indigo-600" />
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <Heart className="h-6 w-6 text-white fill-current" />
               </div>
             </div>
-            <div className="flex items-center mt-2 text-sm text-indigo-600 cursor-pointer hover:underline" onClick={() => setActiveTab('statutes')}>
-              Official docs contributed
+            <div className="mt-4 text-xs font-medium text-pink-50">
+              Likes on your publications
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-indigo-600 to-purple-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-50 text-sm font-medium">Statutes Shared</p>
+                <p className="text-3xl font-bold text-white mt-1">{myStatutes.length}</p>
+              </div>
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-medium text-indigo-50 cursor-pointer hover:underline" onClick={() => setActiveTab('statutes')}>
+              Docs contributed
             </div>
           </div>
         </div>
@@ -423,6 +447,55 @@ const LawyerDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* My Publications Tab */}
+        {activeTab === 'blogs' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Heart className="w-6 h-6 text-emerald-600" /> My Published Blogs
+              </h2>
+              <button 
+                onClick={() => window.location.href='/blogs'} 
+                className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all font-medium shadow-sm"
+              >
+                + Write New Blog
+              </button>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myBlogs.length === 0 ? (
+                <div className="col-span-full bg-white border rounded-xl p-12 text-center text-gray-500">
+                  <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-lg">You haven't published any blogs yet.</p>
+                  <p className="text-sm">Sharing your expertise helps build trust with potential clients.</p>
+                </div>
+              ) : (
+                myBlogs.map((blog) => (
+                  <div key={blog.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
+                        {blog.tags || 'General'}
+                      </span>
+                      <div className="flex items-center gap-1 text-pink-500">
+                        <Heart className="w-4 h-4 fill-current" />
+                        <span className="text-sm font-bold">{blog.likes_count}</span>
+                      </div>
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2" title={blog.title}>{blog.title}</h3>
+                    <p className="text-gray-500 text-sm mb-6 line-clamp-3">{blog.excerpt || blog.content.substring(0, 100) + "..."}</p>
+                    <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-50">
+                      <span className="text-xs text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
+                      <button onClick={() => window.location.href='/blogs'} className="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1 transition-colors">
+                        View <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

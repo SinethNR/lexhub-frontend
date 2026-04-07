@@ -4,6 +4,7 @@ import { Scale, Menu, X, Globe, BarChart, User, Bell } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import DashboardSwitcher from './DashboardSwitcher';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -56,7 +57,7 @@ const Header: React.FC = () => {
     // Mark as read
     try {
       const { api } = await import('../utils/api');
-      await api.put(`/notifications/${notif.id}/read`);
+      await api.put(`/notifications/${notif.id}/read`, {});
     } catch (e) { /* ignore */ }
     setIsNotifOpen(false);
     // Redirect based on type
@@ -125,21 +126,31 @@ const Header: React.FC = () => {
               <h1 className="text-xl font-bold text-blue-900">LexHub IP</h1>
               <p className="text-xs text-gray-600">Sri Lanka</p>
             </div>
-          </Link>          {/* Desktop Navigation - expanded to fill space */}          <nav className="hidden md:flex flex-1 items-center justify-center mx-8 gap-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`text-base font-semibold transition-colors hover:text-blue-900 ${
-                  location.pathname === item.path
-                    ? 'text-blue-900 border-b-2 border-emerald-500 pb-1'
-                    : 'text-gray-600'
-                }`}
-                aria-label={item.label}
-              >
-                {item.label}
-              </Link>
-            ))}          </nav>{/* Language Toggle & Profile Button */}          <div className="flex items-center space-x-4 flex-shrink-0">            {/* Language Selector */}
+          </Link>          {/* Desktop Navigation - expanded to fill space */}
+          <nav className="hidden md:flex flex-1 items-center justify-center mx-8 gap-8">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || 
+                              (item.path === '/ongoing-cases' && location.pathname.startsWith('/case/'));
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`text-base font-semibold transition-colors hover:text-blue-900 ${
+                    isActive
+                      ? 'text-blue-900 border-b-2 border-emerald-500 pb-1'
+                      : 'text-gray-600'
+                  }`}
+                  aria-label={item.label}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          {/* Language Toggle & Profile Button */}
+          <div className="flex items-center space-x-4 flex-shrink-0">
+            <DashboardSwitcher />
             <div className="relative">
               <button
                 onClick={() => setIsLanguageOpen(!isLanguageOpen)}
@@ -286,20 +297,25 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`text-sm font-medium transition-colors hover:text-blue-900 ${
-                    location.pathname === item.path
-                      ? 'text-blue-900'
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.path || 
+                                (item.path === '/ongoing-cases' && location.pathname.startsWith('/case/'));
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`text-sm font-medium transition-colors hover:text-blue-900 ${
+                      isActive
+                        ? 'text-blue-900'
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         )}

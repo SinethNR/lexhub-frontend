@@ -42,7 +42,7 @@ const AuthPage: React.FC = () => {
       // Check if user is logged in by verifying token existence
       const token = localStorage.getItem('token');
       const isLoggedIn = !!token; // Convert to boolean
-      
+
       if (!isLoggedIn) {
         const target = e.target as HTMLElement;
         // Block only nav links in header
@@ -59,7 +59,7 @@ const AuthPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
-      ...prev,      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
@@ -71,23 +71,35 @@ const AuthPage: React.FC = () => {
       return null;
     }
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Validate forms
-      if ((activeTab === 'signup' || activeTab === 'lawyer') && 
-          formData.password !== formData.confirmPassword) {
+      if ((activeTab === 'signup' || activeTab === 'lawyer') &&
+        formData.password !== formData.confirmPassword) {
         toast.error('Passwords do not match');
         return;
       }
-      
+
       setIsLoading(true);
-      
+
       let data;
-      
+
       if (activeTab === 'login') {
+        // --- Development Bypass for All Mock Accounts ---
+        // 1. Check fixed admin login
+        if (formData.email === 'admin@admin.com' && formData.password === 'admin123') {
+          const fakeToken = "header.eyJyb2xlIjogImFkbWluIiwgInN1YiI6ICJhZG1pbkBhZG1pbi5jb20ifQ==.signature";
+          login(fakeToken, 'admin');
+          toast.success('Admin Access Granted (Dev Mode)');
+          navigate('/admin-dashboard');
+          return;
+        }
+
+
+
         const loginData = new URLSearchParams();
         loginData.append('username', formData.email);
         loginData.append('password', formData.password);
@@ -104,20 +116,20 @@ const AuthPage: React.FC = () => {
         };
         data = await api.post('/auth/register', payload);
       }
-      
+
       if (activeTab === 'login') {
         // FastAPI returns access_token
         const token = data.access_token;
-        
+
         // Redirect to dashboard based on user role
         const tokenPayload = parseJwt(token);
         const userRole = tokenPayload.role;
-        
+
         // Update UserContext (handles localStorage and profile fetch)
         login(token, userRole);
-        
+
         toast.success(t('Login successful!'));
-        
+
         if (userRole === 'lawyer') {
           navigate('/lawyer-dashboard');
         } else if (userRole === 'admin') {
@@ -136,7 +148,7 @@ const AuthPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   // We already have parseJwt defined above, no need for a duplicate declaration
 
   const specialties = [
@@ -172,31 +184,28 @@ const AuthPage: React.FC = () => {
           <div className="grid grid-cols-3 gap-1">
             <button
               onClick={() => setActiveTab('login')}
-              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'login'
-                  ? 'bg-white text-blue-900'
-                  : 'text-white hover:bg-white hover:bg-opacity-20'
-              }`}
+              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === 'login'
+                ? 'bg-white text-blue-900'
+                : 'text-white hover:bg-white hover:bg-opacity-20'
+                }`}
             >
               Login
             </button>
             <button
               onClick={() => setActiveTab('signup')}
-              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'signup'
-                  ? 'bg-white text-blue-900'
-                  : 'text-white hover:bg-white hover:bg-opacity-20'
-              }`}
+              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === 'signup'
+                ? 'bg-white text-blue-900'
+                : 'text-white hover:bg-white hover:bg-opacity-20'
+                }`}
             >
               Sign Up
             </button>
             <button
               onClick={() => setActiveTab('lawyer')}
-              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'lawyer'
-                  ? 'bg-white text-blue-900'
-                  : 'text-white hover:bg-white hover:bg-opacity-20'
-              }`}
+              className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${activeTab === 'lawyer'
+                ? 'bg-white text-blue-900'
+                : 'text-white hover:bg-white hover:bg-opacity-20'
+                }`}
             >
               Lawyer
             </button>

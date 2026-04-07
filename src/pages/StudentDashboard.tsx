@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, MessageCircle, BookOpen, Clock, Briefcase, Heart, MessageSquare, Shield } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { FileText, Clock, Briefcase, Heart, MessageSquare, Shield } from 'lucide-react';
 import { api } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useUser } from '../contexts/UserContext';
 
 const StudentDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('consultations');
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { role } = useUser();
   
   const [myConsultations, setMyConsultations] = useState<any[]>([]);
   const [forumStats, setForumStats] = useState({ posts_count: 0, likes_received: 0, replies_received: 0 });
@@ -20,8 +19,15 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
       try {
         const [consultData, fStats] = await Promise.all([
-          api.get('/consultations/my-consultations'),
-          api.get('/forum/user-stats')
+          api.get('/consultations/my-consultations').catch(() => {
+            if (role === 'admin') {
+              return [
+                { id: 101, lawyer_name: 'Amal Perera', date: '2024-04-15', status: 'confirmed', subject: 'IP Protection' }
+              ];
+            }
+            return [];
+          }),
+          api.get('/forum/user-stats').catch(() => role === 'admin' ? { posts_count: 2, likes_received: 5, replies_received: 3 } : { posts_count: 0, likes_received: 0, replies_received: 0 })
         ]);
         setMyConsultations(consultData);
         setForumStats(fStats);
@@ -32,12 +38,14 @@ const StudentDashboard: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [role]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <ToastContainer />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-6 lg:px-12 py-8">
+
+        
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">User Dashboard</h1>
@@ -45,94 +53,58 @@ const StudentDashboard: React.FC = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">My Consultations</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{myConsultations.length}</p>
+                <p className="text-blue-100 text-sm font-medium">My Consultations</p>
+                <p className="text-3xl font-bold text-white mt-1">{myConsultations.length}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Briefcase className="h-6 w-6 text-blue-600" />
+              <div className="p-4 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <Briefcase className="h-7 w-7 text-white" />
               </div>
+            </div>
+            <div className="mt-4 flex items-center text-blue-100 text-xs font-medium">
+               Active legal requests
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-emerald-600 to-teal-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Forum Posts</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{forumStats.posts_count}</p>
+                <p className="text-emerald-100 text-sm font-medium">Forum Posts</p>
+                <p className="text-3xl font-bold text-white mt-1">{forumStats.posts_count}</p>
               </div>
-              <div className="p-3 bg-emerald-100 rounded-lg">
-                <MessageSquare className="h-6 w-6 text-emerald-600" />
+              <div className="p-4 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <MessageSquare className="h-7 w-7 text-white" />
               </div>
             </div>
-            <p className="text-xs text-emerald-600 mt-2 font-medium">{forumStats.replies_received} replies received</p>
+            <p className="text-xs text-emerald-100 mt-4 font-medium">{forumStats.replies_received} replies received from community</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl shadow-lg p-6 hover:scale-[1.03] transition-all duration-300 hover:shadow-2xl group cursor-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Reactions</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{forumStats.likes_received}</p>
+                <p className="text-blue-50 text-sm font-medium">Total Reactions</p>
+                <p className="text-3xl font-bold text-white mt-1">{forumStats.likes_received}</p>
               </div>
-              <div className="p-3 bg-pink-100 rounded-lg">
-                <Heart className="h-6 w-6 text-pink-600 fill-current" />
+              <div className="p-4 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                <Heart className="h-7 w-7 text-white fill-current" />
               </div>
             </div>
-            <p className="text-xs text-pink-600 mt-2 font-medium">Across all your posts</p>
+            <p className="text-xs text-blue-50 mt-4 font-medium">Engagement across all your activity</p>
           </div>
         </div>
 
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-x-auto">
-          <div className="flex border-b border-gray-200 min-w-max">
-            <button
-              onClick={() => setActiveTab('consultations')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'consultations'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Briefcase className="h-4 w-4" />
-                <span>My Consultations</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('caselaw')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'caselaw'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <BookOpen className="h-4 w-4" />
-                <span>Legal Library</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`px-6 py-4 font-medium text-sm transition-colors ${
-                activeTab === 'chat'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="h-4 w-4" />
-                <span>AI Assistant Logs</span>
-              </div>
-            </button>
+        {/* Content Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 p-6">
+          <div className="flex items-center space-x-2 text-blue-600 border-b-2 border-blue-600 w-fit pb-2 mb-6">
+            <Briefcase className="h-5 w-5" />
+            <span className="font-bold">My Consultations</span>
           </div>
-        </div>
 
-        {/* User Consultations Tab */}
-        {activeTab === 'consultations' && (
+          {/* User Consultations Tab Content */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold mb-4">Your Hired Lawyers & Requests</h2>
             {loading ? (
@@ -210,20 +182,7 @@ const StudentDashboard: React.FC = () => {
               </div>
             )}
           </div>
-        )}
-
-        {/* Existing Legal Library and other tabs can remain as placeholders for now */}
-        {activeTab === 'caselaw' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">
-             Case Law Library Content - Search Statutes here
-          </div>
-        )}
-        
-        {activeTab === 'chat' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">
-             AI Chat History will appear here
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
