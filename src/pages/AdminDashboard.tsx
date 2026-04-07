@@ -5,6 +5,7 @@ import { Shield, Users, Briefcase, Trash2, Activity, UserPlus, X } from 'lucide-
 import { api } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import DashboardSwitcher from '../components/DashboardSwitcher';
 
 const AdminDashboard: React.FC = () => {
   const { role, isLoggedIn } = useUser();
@@ -148,15 +149,16 @@ const AdminDashboard: React.FC = () => {
             <p className="text-gray-600">Overview and management of the LexHub platform</p>
           </div>
           
-
-
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            <UserPlus className="h-5 w-5" />
-            <span>Add New Account</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <DashboardSwitcher />
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              <UserPlus className="h-5 w-5" />
+              <span>Add New Account</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
