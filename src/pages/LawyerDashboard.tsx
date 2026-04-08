@@ -9,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 
 const LawyerDashboard: React.FC = () => {
-  const { user, updateUser, role } = useUser();
+  const { user, updateUser } = useUser();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'profile' | 'blogs' | 'statutes'>('overview');
   const [consultations, setConsultations] = useState<any[]>([]);
@@ -38,31 +38,22 @@ const LawyerDashboard: React.FC = () => {
   const fetchConsultations = async () => {
     try {
       setIsLoading(true);
-      const data = await api.get('/consultations/my-consultations').catch(() => {
-        // Fallback for Admin viewing
-        if (role === 'admin') {
-          return [
-            { id: 1, student_name: 'Kasun Fernando', date: '2024-04-10', time: '10:00 AM', status: 'confirmed', subject: 'Trademark Registration' },
-            { id: 2, student_name: 'Sachini Rathnayake', date: '2024-04-12', time: '02:30 PM', status: 'pending', subject: 'Copyright infringement' }
-          ];
-        }
-        throw new Error('Failed to fetch');
-      });
+      const data = await api.get('/consultations/my-consultations');
       setConsultations(data);
       
-      const blogsRes = await api.get('/blogs/me').catch(() => role === 'admin' ? [] : []);
+      const blogsRes = await api.get('/blogs/me');
       setMyBlogs(blogsRes);
       const hearts = blogsRes.reduce((acc: number, blog: any) => acc + (blog.likes_count || 0), 0);
       setTotalHearts(hearts);
 
-      const fStats = await api.get('/forum/user-stats').catch(() => role === 'admin' ? { posts_count: 5, likes_received: 12, replies_received: 8 } : { posts_count: 0, likes_received: 0, replies_received: 0 });
+      const fStats = await api.get('/forum/user-stats');
       setForumStats(fStats);
 
-      const statutesRes = await api.get('/statutes/my-uploads').catch(() => role === 'admin' ? [] : []);
+      const statutesRes = await api.get('/statutes/my-uploads');
       setMyStatutes(statutesRes);
 
     } catch (error) {
-      if (role !== 'admin') toast.error('Failed to fetch data');
+      toast.error('Failed to fetch data');
     } finally {
       setIsLoading(false);
     }

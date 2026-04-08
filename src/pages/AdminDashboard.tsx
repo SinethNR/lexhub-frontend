@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Briefcase, Trash2, Activity, UserPlus, X, User, BarChart } from 'lucide-react';
+import { Shield, Users, Briefcase, Trash2, UserPlus, X, User, BarChart } from 'lucide-react';
 import { api } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DashboardSwitcher from '../components/DashboardSwitcher';
 
 const AdminDashboard: React.FC = () => {
-  const { user, isLoggedIn, logout, perspective } = useUser();
+  const { user, isLoggedIn, isLoading, logout } = useUser();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [stats, setStats] = useState({ total_users: 0, total_lawyers: 0, total_consultations: 0, total_admins: 0 });
@@ -32,15 +32,18 @@ const AdminDashboard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Wait for UserContext to finish loading initial profile
+    if (isLoading) return;
+
     if (!isLoggedIn) {
       navigate('/auth');
-    } else if (user?.user_type !== 'admin') {
+    } else if (user && user.user_type !== 'admin') {
       toast.error('Unauthorized Access');
       navigate('/');
-    } else {
+    } else if (user && user.user_type === 'admin') {
       fetchAdminData();
     }
-  }, [isLoggedIn, user, navigate]);
+  }, [isLoggedIn, user, isLoading, navigate]);
 
   const fetchAdminData = async () => {
     try {
@@ -102,7 +105,16 @@ const AdminDashboard: React.FC = () => {
     return admins;
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (isLoading || (loading && stats.total_users === 0)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading Dashboard Data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row pt-16">
@@ -117,27 +129,11 @@ const AdminDashboard: React.FC = () => {
         
         <nav className="space-y-4">
           <button
-            onClick={() => setActiveTab('admins')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'admins' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            <Shield className="h-5 w-5" />
-            <span>Manage Admins</span>
-          </button>
-          
-          <button
             onClick={() => setActiveTab('users')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'users' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'users' || activeTab === 'admins' || activeTab === 'lawyers' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             <Users className="h-5 w-5" />
-            <span>Manage Users</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('lawyers')}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'lawyers' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            <Briefcase className="h-5 w-5" />
-            <span>Manage Lawyers</span>
+            <span>HR Management</span>
           </button>
         </nav>
       </div>
@@ -150,7 +146,7 @@ const AdminDashboard: React.FC = () => {
             <p className="text-gray-600">Overview and management of the LexHub platform</p>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 ml-auto">
             <DashboardSwitcher />
             
             {/* Mini Profile Section */}
@@ -196,58 +192,62 @@ const AdminDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200"
-            >
-              <UserPlus className="h-5 w-5" />
-              <span className="font-bold">Add Account</span>
-            </button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center space-x-4">
-            <div className="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-              <Shield className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Admins</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.total_admins}</h3>
-            </div>
+        <div className="flex flex-col md:flex-row gap-6 mb-8 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 w-full">
+            <button 
+              onClick={() => setActiveTab('admins')}
+              className={`bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 text-left flex items-center space-x-4 border-gray-100 ${activeTab === 'admins' ? 'ring-2 ring-blue-600 border-transparent bg-blue-50/30' : 'hover:shadow-md hover:border-blue-200'}`}
+            >
+              <div className="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium text-left">Total Admins</p>
+                <h3 className="text-2xl font-bold text-gray-900">{stats.total_admins}</h3>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => setActiveTab('users')}
+              className={`bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 text-left flex items-center space-x-4 border-gray-100 ${activeTab === 'users' ? 'ring-2 ring-blue-600 border-transparent bg-blue-50/30' : 'hover:shadow-md hover:border-blue-200'}`}
+            >
+              <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium text-left">Total Users</p>
+                <h3 className="text-2xl font-bold text-gray-900">{stats.total_users}</h3>
+              </div>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('lawyers')}
+              className={`bg-white rounded-2xl p-6 shadow-sm border transition-all duration-300 text-left flex items-center space-x-4 border-gray-100 ${activeTab === 'lawyers' ? 'ring-2 ring-blue-600 border-transparent bg-blue-50/30' : 'hover:shadow-md hover:border-blue-200'}`}
+            >
+              <div className="h-12 w-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                <Briefcase className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 font-medium text-left">Total Lawyers</p>
+                <h3 className="text-2xl font-bold text-gray-900">{stats.total_lawyers}</h3>
+              </div>
+            </button>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center space-x-4">
-            <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-              <Users className="h-6 w-6" />
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-8 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition shadow-xl shadow-blue-200 group h-[88px]"
+          >
+            <UserPlus className="h-6 w-6 group-hover:scale-110 transition-transform" />
+            <div className="text-left">
+              <span className="block font-bold text-lg leading-none">Add Account</span>
+              <span className="text-blue-100 text-xs">Create new profile</span>
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Users</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.total_users}</h3>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center space-x-4">
-            <div className="h-12 w-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-              <Briefcase className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Lawyers</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.total_lawyers}</h3>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center space-x-4">
-            <div className="h-12 w-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-              <Activity className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Consultations</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.total_consultations}</h3>
-            </div>
-          </div>
+          </button>
         </div>
 
         {/* Tables */}

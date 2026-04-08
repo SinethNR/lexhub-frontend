@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../utils/api';
 
 export type UserRole = 'admin' | 'user' | 'lawyer' | null;
 
 interface UserContextType {
   isLoggedIn: boolean;
+  isLoading: boolean;
   role: UserRole;
   user?: any;
   setRole: (role: UserRole) => void;
@@ -19,6 +20,7 @@ export const UserContext = createContext<UserContextType | undefined>(undefined)
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(!!localStorage.getItem('token'));
   const [role, setRole] = useState<UserRole>(null);
   const [perspective, setInternalPerspective] = useState<UserRole>(localStorage.getItem('lexhub_perspective') as UserRole || null);
   const [user, setUser] = useState<any>(null);
@@ -45,6 +47,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         // localStorage.removeItem('token');
         // setIsLoggedIn(false);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -57,6 +61,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const login = (token: string, newRole: UserRole) => {
     localStorage.setItem('token', token);
     setIsLoggedIn(true);
+    setIsLoading(true);
     setRole(newRole);
     setPerspective(newRole);
     fetchProfile();
@@ -83,7 +88,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ isLoggedIn, role, setRole, perspective, setPerspective, login, logout, user, updateUser }}>
+    <UserContext.Provider value={{ isLoggedIn, isLoading, role, setRole, perspective, setPerspective, login, logout, user, updateUser }}>
       {children}
     </UserContext.Provider>
   );

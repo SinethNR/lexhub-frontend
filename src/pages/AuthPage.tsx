@@ -4,11 +4,19 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../utils/api';
 
 const AuthPage: React.FC = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'lawyer'>('login');
+
+  useEffect(() => {
+    const stateTab = (location.state as any)?.tab;
+    if (stateTab && (stateTab === 'login' || stateTab === 'signup' || stateTab === 'lawyer')) {
+      setActiveTab(stateTab);
+    }
+  }, [location.state]);
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,25 +43,6 @@ const AuthPage: React.FC = () => {
       toast.info('Please Sign Up First', { position: 'top-center', autoClose: 3000 });
       sessionStorage.removeItem('showSearchToast');
     }
-  }, []);
-  // Add effect to block navigation if not logged in
-  React.useEffect(() => {
-    const handleNavClick = (e: MouseEvent) => {
-      // Check if user is logged in by verifying token existence
-      const token = localStorage.getItem('token');
-      const isLoggedIn = !!token; // Convert to boolean
-
-      if (!isLoggedIn) {
-        const target = e.target as HTMLElement;
-        // Block only nav links in header
-        if (target.closest('nav, .header-nav, .main-nav, .top-nav')) {
-          e.preventDefault();
-          toast.info('Please log in to access this feature.', { position: 'top-center', autoClose: 2000 });
-        }
-      }
-    };
-    document.addEventListener('click', handleNavClick, true);
-    return () => document.removeEventListener('click', handleNavClick, true);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -88,15 +77,6 @@ const AuthPage: React.FC = () => {
       let data;
 
       if (activeTab === 'login') {
-        // --- Development Bypass for All Mock Accounts ---
-        // 1. Check fixed admin login
-        if (formData.email === 'admin@admin.com' && formData.password === 'admin123') {
-          const fakeToken = "header.eyJyb2xlIjogImFkbWluIiwgInN1YiI6ICJhZG1pbkBhZG1pbi5jb20ifQ==.signature";
-          login(fakeToken, 'admin');
-          toast.success('Admin Access Granted (Dev Mode)');
-          navigate('/admin-dashboard');
-          return;
-        }
 
 
 

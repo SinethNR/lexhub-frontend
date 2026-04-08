@@ -152,10 +152,18 @@ const StatutePage: React.FC = () => {
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'loading' }));
       
       const fullUrl = `${BASE_URL}${doc.file_url}`;
-      window.open(fullUrl, '_blank');
+      
+      // Create a hidden anchor element to trigger the download more reliably
+      const link = document.createElement('a');
+      link.href = fullUrl;
+      link.setAttribute('download', doc.file_name || 'document.pdf');
+      link.setAttribute('target', '_blank');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       setDownloadStatus(prev => ({ ...prev, [doc.id]: 'success' }));
-      toast.success(`${doc.file_name} is opening in a new tab.`);
+      toast.success(`${doc.file_name} download initiated.`);
       
       setTimeout(() => {
         setDownloadStatus(prev => ({ ...prev, [doc.id]: 'idle' }));

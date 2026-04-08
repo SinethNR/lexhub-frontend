@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MessageCircle, Users, BookOpen, ArrowRight, Shield, Globe, Award } from 'lucide-react';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useLanguage } from '../contexts/LanguageContext';
 import ChatbotWidget from '../components/ChatbotWidget';
@@ -12,29 +12,6 @@ const LandingPage: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const features = [
-    {
-      icon: MessageCircle,
-      title: 'AI Legal Assistant',
-      description: 'Get instant answers to your IP law questions with our intelligent chatbot',
-      link: '/chatbot',
-      color: 'bg-blue-100 text-blue-600',
-    },
-    {
-      icon: BookOpen,
-      title: 'Statute Database',
-      description: 'Search comprehensive IP laws, regulations, and legal precedents',
-      link: '/statutes',
-      color: 'bg-emerald-100 text-emerald-600',
-    },
-    {
-      icon: Users,
-      title: 'Expert Consultation',
-      description: 'Connect with verified IP lawyers for professional legal advice',
-      link: '/consultation',
-      color: 'bg-purple-100 text-purple-600',
-    },
-  ];
 
   const stats = [
     { number: '500+', label: 'Legal Documents' },
@@ -47,22 +24,22 @@ const LandingPage: React.FC = () => {
     e.preventDefault();
     // Set a flag in sessionStorage to show toast after redirect
     sessionStorage.setItem('showSearchToast', '1');
-    navigate('/auth');
+    navigate('/auth', { state: { tab: 'signup' } });
   };
 
   const handleConsultationClick = (e: React.MouseEvent) => {
     e.preventDefault();
     // Set a flag in sessionStorage to show toast after redirect
     sessionStorage.setItem('showConsultToast', '1');
-    navigate('/auth');
+    navigate('/auth', { state: { tab: 'signup' } });
   };
 
   return (
     <div className="min-h-screen">
-      {/* Top right login button */}
       <div className="absolute top-0 right-0 p-6 z-20">
         <Link
           to="/auth"
+          state={{ tab: 'login' }}
           className="inline-flex items-center px-6 py-2 bg-white text-blue-900 rounded-xl shadow hover:bg-gray-100 transition-colors font-semibold text-base border border-blue-200"
         >
           Login
@@ -124,6 +101,7 @@ const LandingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/auth"
+                state={{ tab: 'signup' }}
                 className="inline-flex items-center px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-semibold text-lg"
               >
                 {t('hero.cta')}
@@ -172,7 +150,7 @@ const LandingPage: React.FC = () => {
             {/* AI Legal Assistant Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth', { state: { tab: 'signup' } })}
             >
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <MessageCircle className="h-8 w-8" />
@@ -187,7 +165,7 @@ const LandingPage: React.FC = () => {
             {/* Statute Database Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth', { state: { tab: 'signup' } })}
             >
               <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <BookOpen className="h-8 w-8" />
@@ -202,7 +180,7 @@ const LandingPage: React.FC = () => {
             {/* Expert Consultation Feature */}
             <div
               className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth', { state: { tab: 'signup' } })}
             >
               <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Users className="h-8 w-8" />

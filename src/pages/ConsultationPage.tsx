@@ -56,7 +56,7 @@ const ConsultationPage: React.FC = () => {
       }
     };
     fetchLawyers();
-  }, []);
+  }, [isLoggedIn, user]);
 
   useEffect(() => {
     const fetchBookedSlots = async () => {

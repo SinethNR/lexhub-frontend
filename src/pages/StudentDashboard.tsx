@@ -4,11 +4,9 @@ import { api } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useUser } from '../contexts/UserContext';
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { role } = useUser();
   
   const [myConsultations, setMyConsultations] = useState<any[]>([]);
   const [forumStats, setForumStats] = useState({ posts_count: 0, likes_received: 0, replies_received: 0 });
@@ -19,15 +17,8 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
       try {
         const [consultData, fStats] = await Promise.all([
-          api.get('/consultations/my-consultations').catch(() => {
-            if (role === 'admin') {
-              return [
-                { id: 101, lawyer_name: 'Amal Perera', date: '2024-04-15', status: 'confirmed', subject: 'IP Protection' }
-              ];
-            }
-            return [];
-          }),
-          api.get('/forum/user-stats').catch(() => role === 'admin' ? { posts_count: 2, likes_received: 5, replies_received: 3 } : { posts_count: 0, likes_received: 0, replies_received: 0 })
+          api.get('/consultations/my-consultations'),
+          api.get('/forum/user-stats')
         ]);
         setMyConsultations(consultData);
         setForumStats(fStats);
@@ -38,7 +29,7 @@ const StudentDashboard: React.FC = () => {
       }
     };
     fetchData();
-  }, [role]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
