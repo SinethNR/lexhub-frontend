@@ -62,7 +62,7 @@ const CaseWorkspace: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      if (user.user_type === 'lawyer') setNoteType('guidance_for_next');
+      if (user.user_type === 'lawyer' || user.user_type === 'admin') setNoteType('guidance_for_next');
       else setNoteType('update_asking');
     }
   }, [user]);
@@ -347,7 +347,7 @@ const CaseWorkspace: React.FC = () => {
                           onChange={(e) => setNoteType(e.target.value)}
                           className="text-[10px] uppercase font-bold text-gray-700 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 outline-none shadow-sm cursor-pointer"
                          >
-                           {user?.user_type === 'lawyer' ? (
+                           { (user?.user_type === 'lawyer' || user?.user_type === 'admin') ? (
                              <>
                                <option value="guidance_for_next">Guidance for Next</option>
                                <option value="quick_update">Quick Update</option>

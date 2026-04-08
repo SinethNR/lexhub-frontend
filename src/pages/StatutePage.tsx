@@ -264,7 +264,8 @@ const StatutePage: React.FC = () => {
         {/* Action Bar (Upload) */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Layers className="h-6 w-6 text-emerald-600"/> Available Documents</h2>
-          {user?.user_type === 'lawyer' && (
+          {/* Allow both lawyers and admins to upload statutes */}
+          {(user?.user_type === 'lawyer' || user?.user_type === 'admin') && (
             <button 
               onClick={() => setShowUploadModal(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm font-semibold text-sm"

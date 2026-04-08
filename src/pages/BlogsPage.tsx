@@ -87,8 +87,8 @@ const BlogsPage: React.FC = () => {
   const handleNewBlogPost = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!isLoggedIn || user?.user_type !== 'lawyer') {
-        toast.error("Only lawyers can publish blogs.");
+      if (!isLoggedIn || (user?.user_type !== 'lawyer' && user?.user_type !== 'admin')) {
+        toast.error("Only lawyers and admins can publish blogs.");
         return;
       }
       
@@ -185,8 +185,8 @@ const BlogsPage: React.FC = () => {
           <p className="text-gray-600 mb-0">Insights, stories, and experiences from Sri Lanka’s legal professionals.</p>
         </div>
         
-        {/* Only show New Blog to lawyers */}
-        {isLoggedIn && user?.user_type === 'lawyer' && (
+        {/* Only show New Blog to lawyers and admins */}
+        {isLoggedIn && (user?.user_type === 'lawyer' || user?.user_type === 'admin') && (
           <button
             onClick={() => setShowNewBlogForm(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-900 to-emerald-600 text-white rounded-lg hover:from-blue-800 hover:to-emerald-500 transition-all duration-200 shadow-md"

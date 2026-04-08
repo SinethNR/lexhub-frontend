@@ -40,7 +40,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [autoTheme, setAutoTheme] = useState(() => localStorage.getItem('autoTheme') === 'true');
 
   const tabs = [...TABS];
-  if (user?.user_type === 'lawyer') {
+  if (user?.user_type === 'lawyer' || user?.user_type === 'admin') {
      tabs.splice(1, 0, { key: 'publications', label: 'Publications' });
   }
 
@@ -54,7 +54,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         linkedin_url: linkedinUrl
       };
       
-      if (user?.user_type === 'lawyer') {
+      if (user?.user_type === 'lawyer' || user?.user_type === 'admin') {
         updates.lawyer_details = {
           ...user.lawyer_details,
           specialty,
@@ -233,7 +233,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
               </div>
               
-              {user?.user_type === 'lawyer' && (
+              {(user?.user_type === 'lawyer' || user?.user_type === 'admin') && (
                 <>
                   <hr className="my-6 border-gray-200 dark:border-gray-700" />
                   <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-4">Professional Details</h4>
@@ -272,7 +272,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
         )}
         
-        {activeTab === 'publications' && user?.user_type === 'lawyer' && (
+        {activeTab === 'publications' && (user?.user_type === 'lawyer' || user?.user_type === 'admin') && (
           <div>
             <h3 className="text-xl font-semibold text-blue-600 dark:text-blue-400 text-center mb-1">Publications & Articles</h3>
             <p className="text-gray-600 dark:text-gray-300 text-center mb-6 text-sm">Add your published articles, papers, or case studies</p>

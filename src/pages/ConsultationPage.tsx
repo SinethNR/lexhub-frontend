@@ -90,8 +90,8 @@ const ConsultationPage: React.FC = () => {
     const matchesSpecialty = selectedSpecialty === 'all' || lawyer.lawyer_details?.specialty === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   }).sort((a, b) => {
-    // If a lawyer is viewing this page, make their card pin to the top
-    if (isLoggedIn && user?.user_type === 'lawyer') {
+    // If a lawyer or admin is viewing this page, make their card pin to the top
+    if (isLoggedIn && (user?.user_type === 'lawyer' || user?.user_type === 'admin')) {
       if (a.id === user.id) return -1;
       if (b.id === user.id) return 1;
     }

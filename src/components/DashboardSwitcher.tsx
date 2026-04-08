@@ -4,38 +4,34 @@ import { useUser } from '../contexts/UserContext';
 import { Shield, Briefcase, User as UserIcon } from 'lucide-react';
 
 const DashboardSwitcher: React.FC = () => {
-  const { role } = useUser();
+  const { role, perspective, setPerspective } = useUser();
   const navigate = useNavigate();
-  const location = useLocation();
 
   if (role !== 'admin') return null;
 
   const views = [
     { 
       path: '/admin-dashboard', 
+      id: 'admin',
       label: 'Admin Control', 
       icon: Shield, 
-      color: 'blue',
       activeBg: 'bg-blue-600',
-      activeShadow: 'shadow-blue-200',
       hoverBg: 'hover:bg-blue-50 hover:text-blue-700'
     },
     { 
       path: '/lawyer-dashboard', 
+      id: 'lawyer',
       label: 'Lawyer View', 
       icon: Briefcase, 
-      color: 'purple',
       activeBg: 'bg-purple-600',
-      activeShadow: 'shadow-purple-200',
       hoverBg: 'hover:bg-purple-50 hover:text-purple-700'
     },
     { 
       path: '/student-dashboard', 
+      id: 'user',
       label: 'Student View', 
       icon: UserIcon, 
-      color: 'emerald',
       activeBg: 'bg-emerald-600',
-      activeShadow: 'shadow-emerald-200',
       hoverBg: 'hover:bg-emerald-50 hover:text-emerald-700'
     },
   ];
@@ -44,13 +40,16 @@ const DashboardSwitcher: React.FC = () => {
     <div className="flex items-center mx-2 hidden md:flex">
       <div className="bg-gray-100 p-1 rounded-lg border border-gray-200 flex items-center space-x-1">
         {views.map((view) => {
-          const isActive = location.pathname === view.path;
+          const isActive = perspective === view.id;
           const Icon = view.icon;
           
           return (
             <button
-              key={view.path}
-              onClick={() => navigate(view.path)}
+              key={view.id}
+              onClick={() => {
+                setPerspective(view.id as any);
+                navigate(view.path);
+              }}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
                 isActive 
                   ? `${view.activeBg} text-white shadow-sm` 

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Briefcase, Trash2, Activity, UserPlus, X } from 'lucide-react';
+import { Shield, Users, Briefcase, Trash2, Activity, UserPlus, X, User, BarChart } from 'lucide-react';
 import { api } from '../utils/api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DashboardSwitcher from '../components/DashboardSwitcher';
 
 const AdminDashboard: React.FC = () => {
-  const { role, isLoggedIn } = useUser();
+  const { user, isLoggedIn, logout, perspective } = useUser();
   const navigate = useNavigate();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [stats, setStats] = useState({ total_users: 0, total_lawyers: 0, total_consultations: 0, total_admins: 0 });
   const [users, setUsers] = useState<any[]>([]);
   const [lawyers, setLawyers] = useState<any[]>([]);
@@ -33,13 +34,13 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (!isLoggedIn) {
       navigate('/auth');
-    } else if (role !== 'admin') {
+    } else if (user?.user_type !== 'admin') {
       toast.error('Unauthorized Access');
       navigate('/');
     } else {
       fetchAdminData();
     }
-  }, [isLoggedIn, role, navigate]);
+  }, [isLoggedIn, user, navigate]);
 
   const fetchAdminData = async () => {
     try {
@@ -149,14 +150,59 @@ const AdminDashboard: React.FC = () => {
             <p className="text-gray-600">Overview and management of the LexHub platform</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <DashboardSwitcher />
+            
+            {/* Mini Profile Section */}
+            <div className="relative">
+              <button
+                className="flex items-center space-x-3 bg-white p-1.5 pr-4 rounded-full border border-gray-200 hover:shadow-md transition-all"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+              >
+                <img 
+                  src={user?.profile_picture || '/default-avatar.png'} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full object-cover border-2 border-blue-900" 
+                />
+                <span className="text-sm font-bold text-gray-700 hidden sm:inline">{user?.name}</span>
+              </button>
+
+              {isProfileOpen && (
+                <div className="absolute right-0 top-12 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Admin Session</p>
+                    <p className="text-sm font-bold text-gray-900 truncate">{user?.email}</p>
+                  </div>
+                  <button
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => { navigate(user?.id ? `/profile/${user.id}` : '#'); setIsProfileOpen(false); }}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>My Profile</span>
+                  </button>
+                  <button 
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => { navigate('/reports'); setIsProfileOpen(false); }}
+                  >
+                    <BarChart className="h-4 w-4" />
+                    <span>View Reports</span>
+                  </button>
+                  <button
+                    onClick={() => { logout(); setIsProfileOpen(false); }}
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-50 border-t border-gray-100 mt-2 transition-colors font-semibold"
+                  >
+                    Logout System
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200"
             >
               <UserPlus className="h-5 w-5" />
-              <span>Add New Account</span>
+              <span className="font-bold">Add Account</span>
             </button>
           </div>
         </div>
